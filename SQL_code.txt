@@ -1,0 +1,62 @@
+morty@def0b8c40651:~$ psql -U morty -d scooter_rent
+Password for user morty: smith
+psql (11.18 (Debian 11.18-0+deb10u1))
+Type "help" for help.
+
+scooter_rent=# \dt
+           List of relations
+ Schema |     Name      | Type  | Owner
+--------+---------------+-------+-------
+ public | Couriers      | table | root
+ public | Orders        | table | root
+ public | SequelizeMeta | table | root
+(3 rows)
+
+scooter_rent=# \d "Couriers"
+                                         Table "public.Couriers"
+    Column    |           Type           | Collation | Nullable |                Default
+--------------+--------------------------+-----------+----------+----------------------------------------
+ id           | integer                  |           | not null | nextval('"Couriers_id_seq"'::regclass)
+ login        | character varying(255)   |           | not null |
+ passwordHash | character varying(255)   |           |          |
+ firstName    | character varying(255)   |           |          |
+ createdAt    | timestamp with time zone |           | not null |
+ updatedAt    | timestamp with time zone |           | not null |
+Indexes:
+    "Couriers_pkey" PRIMARY KEY, btree (id)
+    "Couriers_login_key" UNIQUE CONSTRAINT, btree (login)
+
+
+scooter_rent=# select *
+scooter_rent-# from "Orders";
+ id | courierId | firstName | lastName |     address      | metroStation |      phone       | rentTime |      deliveryDate      | track  | inDelivery |  color  |          comment           | cancelled | finished |         createdAt          |         updatedAt
+----+-----------+-----------+----------+------------------+--------------+------------------+----------+------------------------+--------+------------+---------+----------------------------+-----------+----------+----------------------------+----------------------------
+  1 |         1 | Naruto    | Uchiha   | Konoha, 142 apt. | 4            | +7 800 355 35 35 |        5 | 2020-06-06 00:00:00+00 | 986597 | t          | {BLACK} | Saske, come back to Konoha | f         | f        | 2025-08-11 18:55:25.676+00 | 2025-08-11 19:53:02.281+00
+  2 |         1 | Naruto    | Uchiha   | Konoha, 142 apt. | 4            | +7 800 355 35 35 |        5 | 2020-06-06 00:00:00+00 | 986597 | t          | {BLACK} | Saske, come back to Konoha | f         | f        | 2025-08-11 19:53:02.293+00 | 2025-08-11 19:53:02.293+00
+(2 rows)
+
+
+scooter_rent=# SELECT "Couriers".login,
+scooter_rent-#        COUNT("Orders"."courierId")
+scooter_rent-# FROM "Couriers"
+scooter_rent-# INNER JOIN "Orders" ON "Couriers".id = "Orders"."courierId"
+scooter_rent-# WHERE "Orders"."inDelivery" = TRUE
+scooter_rent-# GROUP BY "Couriers".login;
+ login | count
+-------+-------
+ Igor  |     2
+(1 row)
+
+scooter_rent=# SELECT track,
+scooter_rent-#        CASE
+scooter_rent-#            WHEN finished = TRUE THEN 2
+scooter_rent-#            WHEN cancelled = TRUE THEN -1
+scooter_rent-#            WHEN "inDelivery" = TRUE THEN 1
+scooter_rent-#            ELSE 0
+scooter_rent-#        END AS status
+scooter_rent-# FROM "Orders";
+ track  | status
+--------+--------
+ 986597 |      1
+ 986597 |      1
+(2 rows)
